@@ -180,6 +180,14 @@ impl LineConfig {
     pub fn chat_bridge_event_url(&self) -> String {
         format!("{}/chat-bridge/event", self.resolved_server_url())
     }
+
+    /// `GET /chat-bridge/has-browser` — server tells us whether
+    /// any browser chat session is currently connected for our
+    /// `sub`. Used by `LineApprover` to choose between browser
+    /// modal and LINE OA push.
+    pub fn chat_bridge_has_browser_url(&self) -> String {
+        format!("{}/chat-bridge/has-browser", self.resolved_server_url())
+    }
 }
 
 #[cfg(test)]

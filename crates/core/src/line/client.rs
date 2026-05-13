@@ -177,6 +177,38 @@ impl LineClient {
         Ok(())
     }
 
+    /// GET `/chat-bridge/has-browser`. Returns true when a
+    /// plan-10 browser chat session is currently open for this
+    /// binding's user. `LineApprover` calls this to choose
+    /// between the browser approval modal (free, rich UI) and
+    /// LINE OA push (Quick Reply chips, quota-using). On any
+    /// transport error we treat as "no browser" so the approver
+    /// falls back to LINE OA — never leaves the user without an
+    /// approval surface.
+    pub async fn has_browser_connected(&self) -> bool {
+        let url = self.config.chat_bridge_has_browser_url();
+        let resp = match self
+            .http
+            .get(&url)
+            .bearer_auth(&self.config.binding_token)
+            .send()
+            .await
+        {
+            Ok(r) => r,
+            Err(_) => return false,
+        };
+        if !resp.status().is_success() {
+            return false;
+        }
+        let body: serde_json::Value = match resp.json().await {
+            Ok(v) => v,
+            Err(_) => return false,
+        };
+        body.get("browser_connected")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+    }
+
     /// Tell the relay to drop our binding. Used by the GUI's
     /// "Disconnect" path — without this, the server still thinks
     /// the user is paired and routes their next LINE message into
